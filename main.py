@@ -47,21 +47,27 @@ class Piece:
         return (dir_idx - side_idx + 4) % 4
 
 
-def main():
+def parse_file(in_file):
     adjacencies = collections.defaultdict(set)
-    with open('problem.csv', 'r') as file:
-        next(file)  # skip header
-        for line in file:
-            id_, top, right, bottom, left, orientation, row, col = line.split(',')
-            piece = Piece(id_, top, right, bottom, left)
-            for _, _, side in piece.sides():
-                adjacencies[side].add(piece)
-            if orientation:
-                rotation = ORIENTATION_MAP[orientation]
-                seen = {piece}
-                solution = {piece.id: (int(col), int(row), rotation, piece)}
+    next(in_file)  # skip header
 
+    seed_data = None
+    for line in in_file:
+        id_, top, right, bottom, left, orientation, row, col = line.split(',')
+        piece = Piece(id_, top, right, bottom, left)
+        for _, _, side in piece.sides():
+            adjacencies[side].add(piece)
+        if orientation:
+            rotation = ORIENTATION_MAP[orientation]
+            seed_data = piece, rotation, int(col), int(row)
+
+    return (adjacencies, *seed_data)
+
+
+def solve(adjacencies, seed_piece, rotation, col, row):
+    solution = {seed_piece.id: (col, row, rotation, seed_piece)}
     queue = collections.deque(solution.values())
+    seen = {seed_piece}
 
     while queue:
         x, y, rotation, piece = queue.popleft()
@@ -77,27 +83,38 @@ def main():
             solution[next_piece.id] = answer
             queue.append(answer)
 
-    write_solution(solution)
+    return solution
 
 
-def write_solution(solution):
-    with open('solution.csv', 'w') as out_file, open('problem.csv', 'r') as in_file:
-        out_file.write(next(in_file))
-        for line in in_file:
-            id_, top, right, bottom, left, *_ = line.split(',')
-            col, row, rotation, piece = solution[id_]
-            print(
-                id_,
-                top,
-                right,
-                bottom,
-                left,
-                ROTATION_MAP[rotation],
-                row,
-                col,
-                file=out_file,
-                sep=',',
-            )
+def write_solution(solution, in_file, out_file):
+    out_file.write(next(in_file))  # copy header
+    for line in in_file:
+        id_, top, right, bottom, left, *_ = line.split(',')
+        col, row, rotation, piece = solution[id_]
+        print(
+            id_,
+            top,
+            right,
+            bottom,
+            left,
+            ROTATION_MAP[rotation],
+            row,
+            col,
+            file=out_file,
+            sep=',',
+        )
+
+
+def main():
+    in_filename = 'problem.csv'
+    out_filename = 'solution.csv'
+    with open(in_filename, 'r') as file:
+        file_data = parse_file(file)
+
+    solution = solve(*file_data)
+
+    with open(out_filename, 'w') as out_file, open(in_filename, 'r') as in_file:
+        write_solution(solution, in_file, out_file)
 
 # ---
 
