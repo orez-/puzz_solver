@@ -32,6 +32,9 @@ class Piece:
         return [self.top, self.right, self.bottom, self.left]
 
     def sides(self, rotation=0):
+        """
+        Get the direction and side id of each side, given a rotation.
+        """
         directions = collections.deque(DIRECTION_DELTAS)
         directions.rotate(-rotation)
         return [
@@ -42,6 +45,9 @@ class Piece:
         ]
 
     def get_rotation(self, side, dx, dy):
+        """
+        Get the rotation of the piece, given the expected direction of a side.
+        """
         side_idx = self._side_order().index(side)
         dir_idx = DIRECTION_DELTAS.index((dx, dy))
         return (dir_idx - side_idx + 4) % 4
